@@ -1,84 +1,41 @@
-import subprocess
+import os
+from datetime import datetime
 
-def get_installed_packages():
-    package_list = []
-    distro = get_linux_distro()
+# Function to list installed Linux packages with their versions and installation dates
+def list_linux_centos_packages():
+    os.system('rpm -qa --queryformat ')
 
-    if distro == "centos":
-        command = ["rpm", "-qa", "--queryformat", "%{NAME} %{VERSION} %{INSTALLTIME}\n"]
-    elif distro == "debian":
-        command = ["dpkg-query", "-W", "-f='${Package} ${Version} ${Install-Date}\n'"]
-    else:
-        print("Unsupported Linux distribution.")
-        return package_list
-
-    try:
-        output = subprocess.check_output(command).decode("utf-8")
-        lines = output.split("\n")
-
-        if distro == "centos":
-            for line in lines:
-                package_info = line.split()
-                if len(package_info) >= 3:
-                    package_name = package_info[0]
-                    package_version = package_info[1]
-                    package_install_date = package_info[2]
-                    package_list.append((package_name, package_version, package_install_date))
-        elif distro == "debian":
-            for line in lines:
-                package_info = line.split()
-                if len(package_info) >= 3:
-                    package_name = package_info[0]
-                    package_version = package_info[1]
-                    package_install_date = package_info[2]
-                    package_list.append((package_name, package_version, package_install_date))
-        
-        return package_list
-
-    except subprocess.CalledProcessError:
-        print("Error occurred while fetching the package list.")
-        return package_list
+def list_linux_debian_packages():
+    os.system('dpkg-query -l | head ')
 
 
-def get_installed_libraries():
-    library_list = []
+# Function to list installed Python libraries with their versions
+def list_python_libraries():
+    os.system('pip freeze')
 
-    try:
-        output = subprocess.check_output(["pip", "list"]).decode("utf-8")
-        lines = output.split("\n")[2:-1]
+# Get formatted date from UNIX timestamp
+def get_formatted_date(timestamp):
+    return datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
 
+# Check Linux distribution and list installed packages
+def check_linux_distribution():
+    with open('/etc/os-release', 'r') as file:
+        lines = file.readlines()
         for line in lines:
-            package_info = line.split()
-            if len(package_info) >= 2:
-                package_name = package_info[0]
-                package_version = package_info[1]
-                library_list.append((package_name, package_version))
-        
-        return library_list
+            if line.startswith('ID=centos'):
+                print("List of Linux packages installed on CentOS:")
+                list_linux_centos_packages()
+                break
+            elif line.startswith('ID=ubuntu'):
+                print("List of Linux packages installed on Debian:")
+                list_linux_debian_packages()
+                break
+        else:
+            print("Unsupported Linux distribution.")
 
-    except subprocess.CalledProcessError:
-        print("Error occurred while fetching the library list.")
-        return library_list
+# Call the function to check Linux distribution and list installed packages
+check_linux_distribution()
 
-
-def get_linux_distro():
-    try:
-        output = subprocess.check_output(["lsb_release", "-si"]).decode("utf-8").strip()
-        return output.lower()
-
-    except subprocess.CalledProcessError:
-        print("Error occurred while determining Linux distribution.")
-        return None
-
-
-if __name__ == "__main__":
-    packages = get_installed_packages()
-    libraries = get_installed_libraries()
-
-    print("Installed Packages:")
-    for package in packages:
-        print(f"{package[0]} ({package[1]}) - Installed on {package[2]}")
-
-    print("\nInstalled Python Libraries:")
-    for library in libraries:
-        print(f"{library[0]} ({library[1]})")
+# List installed Python libraries with their versions
+print("List of installed Python libraries:")
+list_python_libraries()
